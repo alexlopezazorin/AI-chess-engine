@@ -1,0 +1,57 @@
+import Pieces from "./pieces";
+
+export default function Squares({activepiece, validEndSquares, board, onSquareClick, humanIsWhite}: {activepiece: number[] | null, validEndSquares: number[][] | null, board: number[][], onSquareClick: (row: number, col: number) => void, humanIsWhite: boolean | null}) {
+
+    const ispieceActive = (row: number, col: number): boolean => {
+        return activepiece !== null && activepiece[0] === row && activepiece[1] === col;
+    };
+
+    const isValidEndSquare = (row: number, col: number): boolean => {
+        
+        if (validEndSquares !== null)
+            for (let i = 0; i < validEndSquares.length; i++) {
+                if (validEndSquares[i][0] === row && validEndSquares[i][1] === col) {
+                    return true;
+                }
+            }
+        return false;
+    };
+
+    const getSquareColor = (row: number, col: number): string => {
+        const isLight = (row + col) % 2 === 0;
+        return isLight ? 'bg-gray-200' : 'bg-gray-700';
+    };
+    
+    const getDisplayCoordinates = (displayRow: number, displayCol: number): [number, number] => {
+        const actualRow = humanIsWhite ? displayRow : 7 - displayRow;
+        const actualCol = humanIsWhite ? displayCol : 7 - displayCol;
+        return [actualRow, actualCol];
+    };
+
+    return (
+        <div className="inline-grid gap-0" style={{ gridTemplateColumns: 'repeat(8, 1fr)' }}>
+            {Array(8).fill(null).map((_, displayRow) =>
+                Array(8).fill(null).map((_, displayCol) => {
+                    const [row, col] = getDisplayCoordinates(displayRow, displayCol);
+
+                    return (
+                        <button
+                        key={`${displayRow}-${displayCol}`}
+                        className={`relative w-16 h-16 flex items-center justify-center ${getSquareColor(row, col)} ${ispieceActive(row, col) ? 'focus:ring-3 focus:ring-blue-500 focus:z-10' : ''}`}
+                        onClick={() => onSquareClick(row, col)}
+                        >
+                            <div>
+                                <Pieces piece={board[row][col]}/>
+                            </div>
+
+                            {activepiece !== null && isValidEndSquare(row, col) ?
+                                ((board[row][col] === 0) ? <div className="absolute w-3 h-3 bg-green-700 rounded-full"></div> : <div className="absolute w-12 h-12 border-4 border-green-700 rounded-full"></div>)
+                                : ''}
+                        </button>
+
+                    );
+                })
+            )}
+        </div>
+    );
+}
