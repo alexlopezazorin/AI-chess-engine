@@ -276,6 +276,8 @@ class GameState():
         self.white_rook_kingside_moved = False
         self.black_rook_queenside_moved = False
         self.black_rook_kingside_moved = False
+        self.white_king_castled = False
+        self.black_king_castled = False
 
     def reset_game(self):
         self.board = [
@@ -352,6 +354,13 @@ class GameState():
                     self.black_rook_queenside_moved = True
                 elif move.startpos == [0, 7]:
                     self.black_rook_kingside_moved = True
+        
+        #track castling
+        if abs(move.piecemoved) == 100:
+            if (move.piecemoved == 100 and startpos==[7,4] and (endpos==[7,6] or endpos==[7,2])):
+                self.white_king_castled = True
+            elif (move.piecemoved == -100 and startpos==[0,4] and (endpos==[0,6] or endpos==[0,2])):
+                self.black_king_castled = True
 
         # 50-move rule: reset counter on capture or pawn move, else increment
         if move.piececaptured != 0 or abs(move.piecemoved) == 1:
@@ -592,7 +601,7 @@ class GameState():
 
 
 class AI():
-    SEARCH_DEPTH = 4  # Configurable depth for minimax search
+    SEARCH_DEPTH = 5  # Configurable depth for minimax search
 
     # Piece values (in centipawns: 1 pawn = 100)
     PIECE_VALUES = {
@@ -646,7 +655,7 @@ class AI():
         [ -5,   0,   0,   0,   0,   0,   0,  -5],
         [ -5,   0,   0,   0,   0,   0,   0,  -5],
         [  5,  10,  10,  10,  10,  10,  10,   5],
-        [  0,   0,   0,   0,   0,   0,   0,   0]
+        [  0,   0,   20,   20,   20,   20,   0,   0]
     ]
 
     QUEEN_TABLE = [
@@ -775,24 +784,39 @@ class AI():
         return score
     
     def select_best_move_algorithm(self, possible_moves):
+
         best_move = None
-        best_score = float('-inf')
+        # Iterative deepening
+        for depth in range(1, self.SEARCH_DEPTH + 1):
+            best_score = float('-inf')
+            current_best_move = None
 
-        for move in possible_moves:
-            startpos = move[0]
-            endpos = move[1]
-            promotion_piece = move[2] if len(move) > 2 else None
+            if best_move: #best move of last depth search goes to first position,  so its the first move evaluated in the new depth
+                idx = possible_moves.index(best_move)
+                if idx != 0:
+                    possible_moves[0], possible_moves[idx] = possible_moves[idx], possible_moves[0]
 
-            self.game_state.make_move(startpos, endpos, promotion_piece)
-            score = self.minimax(self.SEARCH_DEPTH - 1, is_ai_turn=False)
 
-            if score > best_score:
-                best_score = score
-                best_move = move
+            for move in possible_moves:
+                startpos = move[0]
+                endpos = move[1]
+                promotion_piece = move[2] if len(move) > 2 else None
 
-            self.game_state.undo_move()
+                self.game_state.make_move(startpos, endpos, promotion_piece)
+                score = self.minimax(depth - 1, is_ai_turn=False)
+                self.game_state.undo_move()
+
+                if score > best_score:
+                    best_score = score
+                    current_best_move = move
+
+            if current_best_move is not None:
+                best_move = current_best_move
 
         return best_move
+
+
+
 
     def minimax(self, depth, is_ai_turn, alpha=float('-inf'), beta=float('inf')):
         # Transposition table lookup
@@ -804,7 +828,7 @@ class AI():
 
         if depth == 0:
             last_mover_is_white = not is_ai_turn
-            score = self.evaluation_function(last_mover_is_white)
+            score = self.quiescence(alpha, beta, is_ai_turn)
             # Store in transposition table
             self.transposition_table[board_hash] = {'score': score, 'depth': depth}
             return score
@@ -867,6 +891,88 @@ class AI():
             self.transposition_table[board_hash] = {'score': best_score, 'depth': depth}
             return best_score
     
+    def quiescence(self, alpha, beta, is_ai_turn):
+        """
+        After having reached depth=0, we calculate direct combinations that
+        include captures, promotion and checks.
+        By doing that, we increment the calculations over risky positions until
+        no more captures, promotion or checks are possible
+        """
+        last_mover_is_white = not is_ai_turn
+        stand_pat = self.evaluation_function(last_mover_is_white)
+
+        #delta prunning: in order to avoid exploring moves where evaluation wont get better
+        DELTA_MARGIN = 1000
+        if stand_pat + DELTA_MARGIN < alpha:
+            return alpha
+
+        # Alpha-beta pruning básico
+        if is_ai_turn:
+            if stand_pat >= beta:
+                return beta
+            alpha = max(alpha, stand_pat)
+        else:
+            if stand_pat <= alpha:
+                return alpha
+            beta = min(beta, stand_pat)
+
+        # Generar SOLO movimientos de captura
+        moves = self.get_capture_and_promotion_moves(is_ai_turn)
+
+        for move in moves:
+            startpos = move[0]
+            endpos = move[1]
+            promotion_piece = move[2] if len(move) > 2 else None
+
+            self.game_state.make_move(startpos, endpos, promotion_piece)
+
+            score = self.quiescence(alpha, beta, not is_ai_turn)
+
+            self.game_state.undo_move()
+
+            if is_ai_turn:
+                alpha = max(alpha, score)
+                if alpha >= beta:
+                    break
+            else:
+                beta = min(beta, score)
+                if alpha >= beta:
+                    break
+
+        return alpha if is_ai_turn else beta
+    
+    def get_capture_and_promotion_moves(self, is_white):
+        moves = []
+
+        for row in range(8):
+            for col in range(8):
+                piece = self.game_state.board[row][col]
+                if piece == 0:
+                    continue
+
+                if (piece > 0) != is_white:
+                    continue
+
+                result = self.game_state.show_valid_end_squares([row, col])
+                valid_moves = result["validEndSquares"]
+                is_promotion = result["promotion"]
+
+                for endpos in valid_moves:
+                    captured_piece = self.game_state.board[endpos[0]][endpos[1]]
+
+                    #PROMOCIONES
+                    if is_promotion:
+                            for promo in ["queen", "rook", "bishop", "knight"]:
+                                moves.append([[row, col], endpos, promo])
+
+                    # CAPTURAS
+                    if captured_piece != 0:
+                            moves.append([[row, col], endpos])
+
+        return moves
+
+
+    
 
     def evaluation_function(self, last_mover_is_white):
         ai_is_white = not self.game_state.human_is_white
@@ -898,25 +1004,20 @@ class AI():
                 score_contribution = material_value if is_white else -material_value
 
                 # Positional value from Piece-Square Table
-                pst_value = self._get_pst_value(piece_type, row, col, is_white)
-                score_contribution += pst_value if is_white else -pst_value
+                positional_value = self._get_positional_value(piece_type, row, col, is_white)
+                score_contribution += positional_value if is_white else -positional_value
 
                 score += score_contribution
 
         # Bonification: Castling
-        if self.game_state.white_king_moved is False and self.game_state.white_rook_kingside_moved is False:
-            score += 50  # Kingside castling rights for white
-        if self.game_state.white_king_moved is False and self.game_state.white_rook_queenside_moved is False:
-            score += 30  # Queenside castling rights for white
-
-        if self.game_state.black_king_moved is False and self.game_state.black_rook_kingside_moved is False:
-            score -= 50  # Kingside castling rights for black
-        if self.game_state.black_king_moved is False and self.game_state.black_rook_queenside_moved is False:
-            score -= 30  # Queenside castling rights for black
+        if self.game_state.white_king_castled:
+            score += 50  # Castling for white
+        if self.game_state.black_king_castled:
+            score -= 50  # Castling for white
 
         # Penalty: Doubled Pawns
-        score -= self._count_doubled_pawns_white() * self.DOUBLED_PAWN_PENALTY
-        score += self._count_doubled_pawns_black() * self.DOUBLED_PAWN_PENALTY
+        score -= self._count_doubled_pawns(ai_is_white) * self.DOUBLED_PAWN_PENALTY
+        score += self._count_doubled_pawns(ai_is_white) * self.DOUBLED_PAWN_PENALTY
 
         # Invert score if human plays white (AI perspective)
         if self.game_state.human_is_white:
@@ -924,7 +1025,7 @@ class AI():
 
         return score
 
-    def _get_pst_value(self, piece_type, row, col, is_white):
+    def _get_positional_value(self, piece_type, row, col, is_white):
         """Get Piece-Square Table value for a piece at position."""
         # Flip row for black pieces (they are played from the opposite side)
         table_row = row if is_white else 7 - row
@@ -942,26 +1043,17 @@ class AI():
         else:
             return 0
 
-    def _count_doubled_pawns_white(self):
+    def _count_doubled_pawns(self, ai_is_white):
         """Count doubled pawns for white (penalty)."""
         count = 0
+        pawn = 1 if ai_is_white else -1
+
         for col in range(8):
             pawns_in_col = 0
             for row in range(8):
-                if self.game_state.board[row][col] == 1:  # White pawn
+                if self.game_state.board[row][col] == pawn:  # White pawn
                     pawns_in_col += 1
             if pawns_in_col > 1:
                 count += pawns_in_col - 1
         return count
 
-    def _count_doubled_pawns_black(self):
-        """Count doubled pawns for black (penalty)."""
-        count = 0
-        for col in range(8):
-            pawns_in_col = 0
-            for row in range(8):
-                if self.game_state.board[row][col] == -1:  # Black pawn
-                    pawns_in_col += 1
-            if pawns_in_col > 1:
-                count += pawns_in_col - 1
-        return count
