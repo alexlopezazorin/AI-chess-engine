@@ -53,26 +53,24 @@ export default function Board(){
     }, [humanIsWhite]);
 
 
-    const makeMoveIfValid = async (startpos: number[], endpos: number[], promotion_piece: string | null = null) => {
-        const response = await fetch("http://localhost:8000/make-move-if-valid", {
+    const makeMove = async (startpos: number[], endpos: number[], promotion_piece: string | null = null) => {
+        const response = await fetch("http://localhost:8000/make-move", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({startpos: startpos, endpos: endpos, promotion_piece: promotion_piece})
         });
         const data = await response.json();
 
-        if (data.success){
-            setBoard(data.board);
-            setTurnWhite(prev => !prev);
+        setBoard(data.board);
+        setTurnWhite(prev => !prev);
 
-            if (data.gameStatus && data.gameStatus.gameIsFinished) {
-                setGameFinished(true);
-                setWinner(data.gameStatus.winner);
-            }
-
-            return {success: true, gameStatus: data.gameStatus};
+        if (data.gameStatus.gameIsFinished) {
+            setGameFinished(true);
+            setWinner(data.gameStatus.winner);
         }
-        return {success: false, gameStatus: null};
+
+        return {success: true, gameStatus: data.gameStatus};
+        
     }
 
     const showValidEndSquares = async (startpos: number[]) => {
@@ -87,16 +85,12 @@ export default function Board(){
     }
 
     const letAIMove = async () => {
-        const response = await fetch("http://localhost:8000/let-ai-move", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({human_is_white: humanIsWhite})
-        })
+        const response = await fetch("http://localhost:8000/let-ai-move");
         const data = await response.json();
         setTurnWhite(prev => !prev);
         setBoard(data.board);
 
-        if (data.gameStatus && data.gameStatus.gameIsFinished) {
+        if (data.gameStatus.gameIsFinished) {
             setGameFinished(true);
             setWinner(data.gameStatus.winner);
         }
@@ -105,16 +99,14 @@ export default function Board(){
     const handlePromote = async (pieceType: string) => {
         if (!selectedSquareStart || !pendingEndpos) return;
 
-        const moveResult = await makeMoveIfValid(selectedSquareStart, pendingEndpos, pieceType);
+        const moveResult = await makeMove(selectedSquareStart, pendingEndpos, pieceType);
 
         setPromotionPanelOpen(false);
         setSelectedSquareStart(null);
         setPendingEndpos(null);
 
-        if (moveResult.success) {
-            if (!moveResult.gameStatus || !moveResult.gameStatus.gameIsFinished) {
-                await letAIMove();
-            }
+        if (!moveResult.gameStatus.gameIsFinished) {
+            await letAIMove();
         }
     }
 
@@ -146,7 +138,7 @@ export default function Board(){
             // If player clicks on the same square, deselect
             if (selectedSquareStart[0] === row && selectedSquareStart[1] === col) {
                 setSelectedSquareStart(null);
-                showValidEndSquares([row, col]);
+                setValidEndSquares(null);
                 return;
             }
 
@@ -174,13 +166,11 @@ export default function Board(){
                 setSelectedSquareStart(null);
                 setValidEndSquares(null);
 
-                const moveResult = await makeMoveIfValid(selectedSquareStart, [row, col]);
+                const moveResult = await makeMove(selectedSquareStart, [row, col]);
 
-                if (moveResult.success) {
-                    if (!moveResult.gameStatus || !moveResult.gameStatus.gameIsFinished) {
-                        await letAIMove();
-                    }
-                }
+                if (!moveResult.gameStatus.gameIsFinished) {
+                    await letAIMove();
+                }                
             }
 
         }

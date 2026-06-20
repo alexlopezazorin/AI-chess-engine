@@ -1,3 +1,3 @@
-from . import ChessEngine
+from . import game_state
 
-game = ChessEngine.GameState()
+game = game_state.GameState()
