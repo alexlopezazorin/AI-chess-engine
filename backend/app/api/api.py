@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from ..Chess import ChessMain
+# from ..Chess import ChessMain
 from pydantic import BaseModel
 from typing import Optional
 import os
