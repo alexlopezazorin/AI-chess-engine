@@ -8,8 +8,6 @@ import PromotionPanel from "./board-elements/promotion-panel/promotion-panel";
 import { useChessGame } from "@/contexts/ChessGameContext";
 
 const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
-console.log('API_URL:', API_URL);
-console.log('NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
 
 export default function Board(){
     const { gamefinished, setGameFinished, winner, setWinner, setMovesHistory, board, setBoard, boardHistory, setBoardHistory, setAiScore, selectedSquareStart, setSelectedSquareStart, validEndSquares, setValidEndSquares } = useChessGame();
@@ -61,7 +59,7 @@ export default function Board(){
 
 
     const makeMove = async (startpos: number[], endpos: number[], promotion_piece: string | null = null) => {
-        const response = await fetch("${API_URL}/make-move", {
+        const response = await fetch(`${API_URL}/make-move`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({startpos: startpos, endpos: endpos, promotion_piece: promotion_piece})
@@ -86,7 +84,7 @@ export default function Board(){
     }
 
     const showValidEndSquares = async (startpos: number[]) => {
-        const response = await fetch("${API_URL}/valid-end-squares", {
+        const response = await fetch(`${API_URL}/valid-end-squares`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify({startpos: startpos})
@@ -97,7 +95,7 @@ export default function Board(){
     }
 
     const letAIMove = async () => {
-        const response = await fetch("${API_URL}/let-ai-move");
+        const response = await fetch(`${API_URL}/let-ai-move`);
         const data = await response.json();
         setAiScore(data.score);
         setTurnWhite(prev => !prev);
