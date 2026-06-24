@@ -7,7 +7,7 @@ import NewGamePanel from "./board-elements/new-game-panel/new-game-panel";
 import PromotionPanel from "./board-elements/promotion-panel/promotion-panel";
 import { useChessGame } from "@/contexts/ChessGameContext";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || '${API_URL}';
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 export default function Board(){
     const { gamefinished, setGameFinished, winner, setWinner, setMovesHistory, board, setBoard, boardHistory, setBoardHistory, setAiScore, selectedSquareStart, setSelectedSquareStart, validEndSquares, setValidEndSquares } = useChessGame();
