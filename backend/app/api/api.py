@@ -24,8 +24,9 @@ app.add_middleware(
     allow_headers=["*"]
 )
 
-
-
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 @app.get("/game-state")
 async def root(human_is_white: bool, reset_game: bool = False):
