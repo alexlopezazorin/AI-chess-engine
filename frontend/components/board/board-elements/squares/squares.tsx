@@ -1,6 +1,10 @@
 import Pieces from "./pieces";
+import {useState} from "react";
+import {useChessGame} from "@/contexts/ChessGameContext";
 
 export default function Squares({activepiece, validEndSquares, board, onSquareClick, humanIsWhite}: {activepiece: number[] | null, validEndSquares: number[][] | null, board: number[][], onSquareClick: (row: number, col: number) => void, humanIsWhite: boolean | null}) {
+
+    const { boardflipped } = useChessGame();
 
     const ispieceActive = (row: number, col: number): boolean => {
         return activepiece !== null && activepiece[0] === row && activepiece[1] === col;
@@ -23,8 +27,9 @@ export default function Squares({activepiece, validEndSquares, board, onSquareCl
     };
     
     const getDisplayCoordinates = (displayRow: number, displayCol: number): [number, number] => {
-        const actualRow = humanIsWhite ? displayRow : 7 - displayRow;
-        const actualCol = humanIsWhite ? displayCol : 7 - displayCol;
+        const showNormal = (humanIsWhite && !boardflipped) || (!humanIsWhite && boardflipped);
+        const actualRow = showNormal ? displayRow : 7 - displayRow;
+        const actualCol = showNormal ? displayCol : 7 - displayCol;
         return [actualRow, actualCol];
     };
 

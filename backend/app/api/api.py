@@ -3,13 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from ..Chess import ChessMain
 from pydantic import BaseModel
 from typing import Optional
+import os
 
 app = FastAPI()
 
 origins = [
     "http://localhost:3000",
-    "localhost:3000"
+    "localhost:3000",
+    os.getenv("FRONTEND_URL", "http://localhost:3000")
 ]
+
+# Remove duplicates
+origins = list(set(origins))
 
 app.add_middleware(
     CORSMiddleware,
@@ -27,7 +32,10 @@ async def root(human_is_white: bool, reset_game: bool = False):
     if reset_game:
         ChessMain.game.reset_game()
     ChessMain.game.human_is_white = human_is_white
-    return {"board": ChessMain.game.get_board_as_matrix()}
+    return {
+        "board_history": ChessMain.game.get_board_as_matrix(),
+        "moves_history": ChessMain.game.get_move_history_in_human_notation()
+    }
 
 
 class ValidEndSquaresRequest(BaseModel):
@@ -53,7 +61,17 @@ async def make_move(move_request: MoveRequest):
 
     ChessMain.game.make_move(start_square, end_square, move_request.promotion_piece)
     game_status = ChessMain.game.check_game_status(last_player_is_white=ChessMain.game.human_is_white)
-    return {"board": ChessMain.game.get_board_as_matrix(), "gameStatus": game_status}
+
+    # Get last move capture status
+    last_move = ChessMain.game.moves_history[-1] if ChessMain.game.moves_history else None
+    is_capture = last_move[4] if last_move else False
+
+    return {
+        "board_history": ChessMain.game.get_board_as_matrix(),
+        "gameStatus": game_status,
+        "moves_history": ChessMain.game.get_move_history_in_human_notation(),
+        "is_capture": is_capture
+    }
 
 
 
@@ -61,11 +79,20 @@ async def make_move(move_request: MoveRequest):
 async def let_ai_move():
     move_made_by_AI = ChessMain.game.let_ai_make_move()
     game_status = ChessMain.game.check_game_status(last_player_is_white=not ChessMain.game.human_is_white)
-    board = ChessMain.game.get_board_as_matrix()
+
+    # Get last move capture status
+    last_move = ChessMain.game.moves_history[-1] if ChessMain.game.moves_history else None
+    is_capture = last_move[4] if last_move else False
+
+    # Transform AI score to human-readable format
+    human_readable_score = ChessMain.game.transform_ai_evaluation_score_into_a_human_readable_score(move_made_by_AI[2])
 
     return {
         "startpos": move_made_by_AI[0],
         "endpos": move_made_by_AI[1],
-        "board": board,
-        "gameStatus": game_status
+        "score": human_readable_score,
+        "board_history": ChessMain.game.get_board_as_matrix(),
+        "gameStatus": game_status,
+        "moves_history": ChessMain.game.get_move_history_in_human_notation(),
+        "is_capture": is_capture
     }
