@@ -66,5 +66,8 @@ export function ChessGameProvider({ children }: { children: ReactNode }) {
 
 export function useChessGame() {
   const context = useContext(ChessGameContext);
+  if (!context) {
+    throw new Error('useChessGame must be used within a ChessGameProvider');
+  }
   return context;
 }
