@@ -7,6 +7,10 @@ import os
 
 app = FastAPI()
 
+@app.on_event("startup")
+async def startup_event():
+    print("FastAPI startup event triggered")
+
 origins = [
     "http://localhost:3000",
     "localhost:3000",
