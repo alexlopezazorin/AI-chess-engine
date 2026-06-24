@@ -7,10 +7,6 @@ import os
 
 app = FastAPI()
 
-@app.on_event("startup")
-async def startup_event():
-    print("FastAPI startup event triggered")
-
 origins = [
     "http://localhost:3000",
     "localhost:3000",
@@ -27,10 +23,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"]
 )
-
-@app.get("/health")
-async def health():
-    return {"status": "ok"}
 
 @app.get("/game-state")
 async def root(human_is_white: bool, reset_game: bool = False):
