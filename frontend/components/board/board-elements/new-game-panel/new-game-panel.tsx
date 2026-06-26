@@ -3,7 +3,7 @@
 import ChessPieces from "../squares/pieces";
 import { useState } from 'react';
 
-export default function WelcomePanel({winner, onStartGame}: {winner: string | null, onStartGame: (color: 'white' | 'black' | 'random') => void }) {
+export default function NewGamePanel({winner, onStartGame}: {winner: string | null, onStartGame: (color: 'white' | 'black' | 'random') => void }) {
     const [color, setColor] = useState<'white' | 'black' | 'random'>('white');
 
 
@@ -16,10 +16,11 @@ export default function WelcomePanel({winner, onStartGame}: {winner: string | nu
             setColor('black');
         }
     }
+
     return (
         <div className="fixed inset-0 bg-transparent flex items-center justify-center text-center">
             <div className="bg-white p-8 rounded-lg shadow-2xl relative">
-                
+
                 {winner ? (
                     winner === 'white' ? <p className="text-lg font-bold">White wins</p>
                     : winner === 'black' ? <p className="text-lg font-bold">Black wins</p>

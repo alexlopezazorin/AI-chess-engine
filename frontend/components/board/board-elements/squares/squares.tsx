@@ -42,7 +42,7 @@ export default function Squares({activepiece, validEndSquares, board, onSquareCl
                     return (
                         <button
                         key={`${displayRow}-${displayCol}`}
-                        className={`relative w-16 h-16 flex items-center justify-center ${getSquareColor(row, col)} ${ispieceActive(row, col) ? 'focus:ring-3 focus:ring-blue-500 focus:z-10' : ''}`}
+                        className={`relative w-10 h-10 md:w-16 md:h-16 flex items-center justify-center ${getSquareColor(row, col)} ${ispieceActive(row, col) ? 'focus:ring-3 focus:ring-blue-500 focus:z-10' : ''}`}
                         onClick={() => onSquareClick(row, col)}
                         >
                             <div>
@@ -50,7 +50,7 @@ export default function Squares({activepiece, validEndSquares, board, onSquareCl
                             </div>
 
                             {activepiece !== null && isValidEndSquare(row, col) ?
-                                ((board[row][col] === 0) ? <div className="absolute w-3 h-3 bg-green-700 rounded-full"></div> : <div className="absolute w-12 h-12 border-4 border-green-700 rounded-full"></div>)
+                                ((board[row][col] === 0) ? <div className="absolute w-2 h-2 md:w-3 md:h-3 bg-green-700 rounded-full"></div> : <div className="absolute w-12 h-12 border-4 border-green-700 rounded-full"></div>)
                                 : ''}
                         </button>
 

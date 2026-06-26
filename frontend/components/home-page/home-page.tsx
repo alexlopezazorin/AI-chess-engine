@@ -14,9 +14,13 @@ export default function HomePage() {
                 </div>
 
                 <div className="mt-4 flex flex-row justify-center">
-                    <LateralButtons/>
+                    <div className="hidden lg:block">
+                        <LateralButtons/>
+                    </div>
                     <Board/>
-                    <LateralPanel/>
+                    <div className="hidden lg:block">
+                        <LateralPanel/>
+                    </div>
                 </div>
 
                 <div className="mt-4 flex justify-center">

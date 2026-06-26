@@ -5,6 +5,12 @@
   --black: #000000;
 }
 
+html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 body {
   background: var(--white);
   color: var(--black);

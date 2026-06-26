@@ -14,7 +14,7 @@ export default function EvaluationBar() {
         <div className="flex flex-col">
             <div className="text-center text-xl">Evaluation: {aiScore}</div>
 
-            <div className="mt-1 w-160 h-8 bg-gray-700 rounded-2xl overflow-hidden border-2 border-gray-900">
+            <div className="mt-1 w-56 md:w-80 lg:w-160 h-8 bg-gray-700 rounded-2xl overflow-hidden border-2 border-gray-900">
                 <div style={{ width: calculateBarWidth() }} className="h-full bg-white rounded-2xl transition-all duration-300"></div>
             </div>
         </div>

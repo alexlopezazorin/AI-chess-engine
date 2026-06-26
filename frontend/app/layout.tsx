@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={fruktur.className}>{children}</body>
+      <body className={`${fruktur.className} h-screen w-screen overflow-hidden`}>{children}</body>
     </html>
   );
 }

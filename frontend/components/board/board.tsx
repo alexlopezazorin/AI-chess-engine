@@ -198,18 +198,16 @@ export default function Board(){
     return(
         <div>
             <div className="flex flex-col items-center">
-                
+
                 <div>
                     {board ? (<Squares activepiece={selectedSquareStart} validEndSquares={validEndSquares} board={board} onSquareClick={handleSquareClick} humanIsWhite={humanIsWhite}/>): (<p>Loading board...</p>) }
                 </div>
             </div>
 
-            <div className="flex items-center justify-center">
-                {gamefinished  && <NewGamePanel winner= {winner} onStartGame={(color) => startNewGame(color)}/>}
-            </div>
+            {gamefinished  && <NewGamePanel winner= {winner} onStartGame={(color) => startNewGame(color)}/>}
 
         <PromotionPanel isOpen={promotionPanelOpen} onCancel={handleCancelPromotion} onPromote={handlePromote} turnWhite={turnWhite}/>
-        
+
         </div>
     )
 }
