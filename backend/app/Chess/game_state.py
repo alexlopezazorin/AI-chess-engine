@@ -1100,6 +1100,19 @@ class GameState:
         is_white = ai_is_white if is_maximizing else not ai_is_white
 
         legal_moves = self.get_legal_moves(is_white)
+
+        # Check if current player is in checkmate or stalemate (no legal moves)
+        if not legal_moves:
+            if self._is_in_check(is_white):
+                # Checkmate - bad for the player to move (is_white)
+                best_evaluation = -1000000 if is_maximizing else 1000000
+            else:
+                # Stalemate - draw
+                best_evaluation = self.evaluate_board()
+
+            self.transposition_table[board_hash] = (depth, best_evaluation)
+            return best_evaluation
+
         legal_moves = self._sort_moves_by_priority(legal_moves, is_white, depth)
 
         if is_maximizing:
