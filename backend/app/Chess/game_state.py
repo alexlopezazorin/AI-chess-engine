@@ -38,7 +38,7 @@ class GameState:
     ]
 
     def __init__(self):
-        self.depth = 4
+        self.depth = 3
         self.current_search_depth = self.depth
         self.reset_game()
         self.transposition_table = {}
