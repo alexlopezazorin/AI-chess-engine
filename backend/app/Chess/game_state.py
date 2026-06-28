@@ -203,6 +203,39 @@ class GameState:
 
         return legal_captures
 
+    def get_tactical_moves(self, is_white):
+        """Get legal capture moves and checking moves (for quiescence search)"""
+        all_moves = self.get_all_possible_moves(is_white)
+        tactical_moves = []
+        opponent_is_white = not is_white
+
+        for start_square, end_square, promotion in all_moves:
+            # Check if move is a capture BEFORE making it
+            is_capture = self._get_piece(end_square) is not None
+
+            board_state = self._save_board_state()
+            self.make_move(start_square, end_square, promotion)
+
+            # Check if move gives check
+            is_checking = self._is_in_check(opponent_is_white)
+
+            self._restore_board_state(board_state)
+
+            # Include if is capture OR gives check (will be filtered for legality next)
+            if is_capture or is_checking:
+                tactical_moves.append((start_square, end_square, promotion))
+
+        # Filter for legal moves (don't leave king in check)
+        legal_tactical = []
+        for start_square, end_square, promotion in tactical_moves:
+            board_state = self._save_board_state()
+            self.make_move(start_square, end_square, promotion)
+            if not self._is_in_check(is_white):
+                legal_tactical.append((start_square, end_square, promotion))
+            self._restore_board_state(board_state)
+
+        return legal_tactical
+
     def get_legal_moves(self, is_white):
         """Get only legal moves (that don't leave king in check)"""
         all_moves = self.get_all_possible_moves(is_white)
@@ -1057,18 +1090,18 @@ class GameState:
         ai_is_white = not self.human_is_white
         is_white = ai_is_white if is_maximizing else not ai_is_white
 
-        # Generate and evaluate only capture moves
-        capture_moves = self.get_capture_moves(is_white)
-        if not capture_moves:
+        # Generate and evaluate tactical moves (captures + checks)
+        tactical_moves = self.get_tactical_moves(is_white)
+        if not tactical_moves:
             return stand_pat
 
-        capture_moves = self._sort_moves_by_priority(capture_moves, is_white, depth=0)
+        tactical_moves = self._sort_moves_by_priority(tactical_moves, is_white, depth=0)
 
-        for start_square, end_square, promotion in capture_moves:
+        for start_square, end_square, promotion in tactical_moves:
             board_state = self._save_board_state()
             self.make_move(start_square, end_square, promotion)
 
-            # Recursively search captures by opponent
+            # Recursively search tactical moves by opponent
             value = self.quiescence(not is_maximizing, alpha, beta, depth + 1)
 
             self._restore_board_state(board_state)
