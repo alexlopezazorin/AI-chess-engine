@@ -922,11 +922,11 @@ class GameState:
         # Adjust search depth based on number of legal moves
         num_moves = len(legal_moves)
         if num_moves > 15:
-            self.depth = 2  # Many moves = shallower search
+            self.depth = 1  # Many moves = shallower search
         elif num_moves < 5:
-            self.depth = 4  # Few moves = deeper search
+            self.depth = 3  # Few moves = deeper search
         else:
-            self.depth = 3  # Default
+            self.depth = 2  # Default
 
         # Update killer moves array size based on new depth
         self.killer_moves = [set() for _ in range(self.depth + 1)]
