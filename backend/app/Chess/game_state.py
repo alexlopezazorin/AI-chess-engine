@@ -173,36 +173,6 @@ class GameState:
 
         return all_possible_moves
 
-    def get_capture_moves(self, is_white):
-        """Get only legal capture moves (for quiescence search)"""
-        all_moves = self.get_all_possible_moves(is_white)
-        capture_moves = []
-
-        for start_square, end_square, promotion in all_moves:
-            # Check if there's a piece to capture at end_square
-            if self._get_piece(end_square) is not None:
-                capture_moves.append((start_square, end_square, promotion))
-            # Also include en passant captures
-            elif abs(self._get_piece(start_square)) == 1:  # Pawn
-                if self.last_move:
-                    last_start, last_end, last_piece = self.last_move
-                    if abs(last_piece) == 1 and abs(last_start - last_end) == 16:
-                        # Could be en passant
-                        if abs(last_end // 8 - start_square // 8) == 1 and abs(last_end % 8 - start_square % 8) == 1:
-                            if abs(end_square % 8 - last_end % 8) == 0:  # Same file
-                                capture_moves.append((start_square, end_square, promotion))
-
-        # Filter for legal moves (don't leave king in check)
-        legal_captures = []
-        for start_square, end_square, promotion in capture_moves:
-            board_state = self._save_board_state()
-            self.make_move(start_square, end_square, promotion)
-            if not self._is_in_check(is_white):
-                legal_captures.append((start_square, end_square, promotion))
-            self._restore_board_state(board_state)
-
-        return legal_captures
-
     def get_tactical_moves(self, is_white):
         """Get legal capture moves and checking moves (for quiescence search)"""
         all_moves = self.get_all_possible_moves(is_white)
